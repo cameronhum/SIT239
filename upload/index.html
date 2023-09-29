@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        .tempInfo{
+            display:inline;
+        }
+
+    </style>
+</head>
+<body>
+
+
+
+    <h1>Home Automation</h1>
+    <!--<input type="text" id="messageInput" placeholder="Type a message">
+    <button id="sendButton">Send</button>
+    <div id="messageLog"></div> -->
+    <div>
+        <p class="tempInfo">temperature: </p>
+        <p class="tempInfo" id="temp"></p>
+    </div>
+    <div>
+        <p class="tempInfo">state: </p>
+        <p class="tempInfo" id="tempState"></p>
+    </div>
+    <div>
+        <p class="tempInfo">current set temperature: </p>
+        <p class="tempInfo" id="tempSet"></p>
+    </div>
+    <br />    <br />
+
+    <label>Set Temperature:</label>
+    <input type="number" id="tempControlInput" placeholder="">
+    <button id="setTempControlInput">set</button>
+    <br />
+    <br />
+
+    <label>Set State:</label>
+    <select id="forceTempState">
+        <option value="auto">Auto</option>
+        <option value="heat">Heat</option>
+        <option value="cool">Cool</option>
+        <option value="none">None</option>
+    </select>
+    <button id="setForceTempState">set</button>
+    <br />
+    <br />
+
+    <label for="timeInput">Select a start time:</label>
+    <input type="time" id="tempStartTimeInput" name="timeInput">
+    <br />
+
+    <label for="timeInput">Select an end time:</label>
+    <input type="time" id="tempEndTimeInput" name="timeInput">
+    <br />
+
+    <label>Select scheduled state State:</label>
+    <select id="scheduleTempState">
+        <option value="auto">Auto</option>
+        <option value="heat">Heat</option>
+        <option value="cool">Cool</option>
+        <option value="none">None</option>
+    </select>
+    <button id="scheduleTemp">schedule</button>
+
+
+    <script>
+        const tempControlInput = document.getElementById('tempControlInput');
+        const setTempControlInput = document.getElementById('setTempControlInput');
+        const messageLog = document.getElementById('messageLog');
+        const temp = document.getElementById('temp');
+        const tempSet = document.getElementById('tempSet');
+        const tempState = document.getElementById('tempState');
+
+        const tempStartTimeInput = document.getElementById('tempStartTimeInput');
+        const tempEndTimeInput = document.getElementById('tempEndTimeInput');
+        const scheduleTemp = document.getElementById('scheduleTemp');
+        const domainName = window.location.hostname;
+        const socket = new WebSocket(`wss://${domainName}/`);
+        //const socket = new WebSocket('wss://6256-2402-b801-2873-1f00-2c5c-bb43-7729-a6cd.ngrok-free.app:5000');
+
+        function removePrefix(inputString) {
+            return inputString.replace(/^(web: |temperature: )/, '');
+        }
+
+        socket.addEventListener('open', (event) => {
+            console.log('WebSocket connection opened');
+            socket.send('web: ' + "initiate");
+
+        });
+
+        socket.addEventListener('message', (event) => {
+            const message = event.data;
+            if (message.startsWith("temperature: ")) {
+
+                temp.innerHTML = removePrefix(message).split(',')[0];
+                tempState.innerHTML = removePrefix(message).split(',')[1];
+                tempSet.innerHTML = removePrefix(message).split(',')[2];
+
+            } else {
+                //messageLog.innerHTML += `<p>Received: ${message}</p>`;
+            }
+        });
+
+        socket.addEventListener('close', (event) => {
+            console.log('WebSocket connection closed');
+        });
+
+        setTempControlInput.addEventListener('click', () => {
+            const messageToSend = "setTemp: " + tempControlInput.value;
+            socket.send('web: ' + messageToSend);
+            tempControlInput.value = '';
+            //messageLog.innerHTML += `<p>Sent: ${messageToSend}</p>`;
+        });
+        setForceTempState.addEventListener('click', () => {
+            const messageToSend = "setState: " + forceTempState.value;
+            socket.send('web: ' + messageToSend);
+            tempControlInput.value = '';
+            //messageLog.innerHTML += `<p>Sent: ${messageToSend}</p>`;
+        });
+
+        scheduleTemp.addEventListener('click', () => {
+            const messageToSend = "setSchedule: " + scheduleTempState.value + ',' + tempStartTimeInput.value + ',' +  tempEndTimeInput.value;
+            socket.send('web: ' + messageToSend);
+            tempControlInput.value = '';
+            //messageLog.innerHTML += `<p>Sent: ${messageToSend}</p>`;
+        });
+
+    </script>
+</body>
+</html>
